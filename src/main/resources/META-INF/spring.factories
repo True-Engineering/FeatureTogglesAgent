@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  ru.trueengineering.feature.flag.agent.configuration.FeatureStoreConfiguration
+org.springframework.context.ApplicationContextInitializer=ru.trueengineering.feature.flag.agent.external.config.FFExternalPropertyInitializer

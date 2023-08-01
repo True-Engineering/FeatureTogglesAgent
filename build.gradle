@@ -1,0 +1,127 @@
+plugins {
+    id 'org.springframework.boot' version '2.3.2.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'java'
+    id "com.palantir.docker" version "0.25.0"
+    id 'checkstyle'
+    id 'org.sonarqube' version '3.3'
+//    для красивого логирования результата тестов
+    id 'com.adarshr.test-logger' version '3.0.0'
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'checkstyle'
+
+group = 'ru.trueengineering'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+checkstyle {
+    toolVersion = '8.23'
+    configFile = file("config/checkstyle/checkstyle.xml")
+    showViolations = false
+}
+checkstyleMain {
+    source = 'src/main/java'
+}
+checkstyleTest {
+    source = 'src/test/java'
+}
+
+clean.doFirst {
+    delete "${rootDir}/out"
+    println "${rootDir}/out"
+
+    delete "${rootDir}/src/main/generated"
+    println "${rootDir}/src/main/generated"
+}
+
+compileJava {
+    options.warnings = false
+    options.deprecation = false
+    options.compilerArgs += ["-Xdoclint:none", "-Xlint:unchecked", "-nowarn"]
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "Hoxton.SR3")
+    set('mapstructVersion', "1.3.1.Final")
+
+    dockerHubUrl = ""
+    dockerHubUrl = System.getProperty('DEV_DOCKER_HUB_URL') == null ? dockerHubUrl : "${System.getProperty('DEV_DOCKER_HUB_URL')}"
+    dockerHubUsername = System.getProperty('DEV_DOCKER_HUB_USERNAME')
+    dockerHubPassword = System.getProperty('DEV_DOCKER_HUB_PASSWORD')
+
+    jarName = project.name
+    imageName = "${jarName}"
+    imageVersion = System.getProperty('CUSTOM_TAG') == null ? "latest" : "${System.getProperty('CUSTOM_TAG')}"
+}
+
+dependencies {
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth'
+    implementation 'io.micrometer:micrometer-registry-influx'
+
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    implementation 'ru.trueengineering:true-logger:1.7'
+
+    implementation 'org.projectlombok:lombok:1.18.22'
+    implementation 'org.apache.commons:commons-lang3:3.9'
+    implementation 'org.springframework:spring-aspects:5.3.1'
+
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
+    implementation 'ch.qos.logback:logback-core:1.2.11'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.0.1'
+    implementation 'org.codehaus.janino:janino:3.1.2'
+
+    implementation group: 'io.kubernetes', name: 'client-java', version: '13.0.0'
+
+    testImplementation 'org.springframework.amqp:spring-rabbit-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation group: 'org.junit-pioneer', name: 'junit-pioneer', version: '1.4.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.github.tomakehurst:wiremock:2.27.2'
+
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+bootJar {
+    getDestinationDirectory().set(new File("build/ms"))
+    archiveBaseName = jarName
+    layered()
+}
+
+docker {
+    name "${dockerHubUrl}/${imageName}:${imageVersion}"
+    tag 'latest', "${imageVersion}"
+    files file("${buildDir}")
+    dockerfile = file("Dockerfile")
+}

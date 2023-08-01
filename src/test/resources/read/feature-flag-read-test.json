@@ -1,0 +1,11 @@
+{
+  "testFeature": {
+    "uid": "testFeature",
+    "enable": true,
+    "description": "testFeatureDescription",
+    "permissions": [],
+    "customProperties": {
+      "property-key": "property-value"
+    }
+  }
+}

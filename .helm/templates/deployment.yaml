@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  replicas: 1
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      serviceAccountName: configmap-updater-{{ .Release.Name }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+      containers:
+        - name: feature-flag-agent
+          image: {{ .Values.image.repository }}agent:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: {{.Values.actuatorPath}}
+              port: 8769
+            initialDelaySeconds: {{.Values.livenessProbeTime.small.initialDelaySeconds}}
+            periodSeconds: {{.Values.livenessProbeTime.periodSeconds}}
+            timeoutSeconds: {{.Values.livenessProbeTime.timeoutSeconds}}
+            failureThreshold: {{.Values.livenessProbeTime.failureThreshold}}
+          readinessProbe:
+            httpGet:
+              path: {{.Values.actuatorPath}}
+              port: 8769
+            initialDelaySeconds: {{.Values.readinessProbeTime.small.initialDelaySeconds}}
+            periodSeconds: {{.Values.readinessProbeTime.periodSeconds}}
+            timeoutSeconds: {{.Values.readinessProbeTime.timeoutSeconds}}
+            failureThreshold: {{.Values.readinessProbeTime.failureThreshold}}
+          env:
+            - name: FF_AGENT_CONFIG_PATH
+              value: {{ .Values.config.path }}
+            - name: APP_VERSION
+              value: {{ .Values.image.tag }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-configmap
+          resources:
+            requests:
+              memory: {{ .Values.resourceRequests.small.memory }}
+              cpu: {{ .Values.resourceRequests.small.cpu }}
+            limits:
+              memory: {{ .Values.resourceLimits.small.memory }}
+              cpu: {{ .Values.resourceLimits.small.cpu }}

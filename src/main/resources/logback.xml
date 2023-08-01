@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="true" scanPeriod="3 seconds">
+    <contextName>FF-AGENT</contextName>
+
+    <appender name="kafka_stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <message/>
+                <loggerName/>
+                <threadName/>
+                <logLevel/>
+                <contextName>
+                    <fieldName>applicationName</fieldName>
+                </contextName>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                        <maxLength>16384</maxLength>
+                        <shortenedClassNameLength>20</shortenedClassNameLength>
+                        <exclude>sun\.reflect\..*\.invoke.*</exclude>
+                    </throwableConverter>
+                </stackTrace>
+                <mdc>
+                    <excludeMdcKeyName>X-B3-SpanId</excludeMdcKeyName>
+                    <excludeMdcKeyName>X-Span-Export</excludeMdcKeyName>
+                    <excludeMdcKeyName>X-B3-ParentSpanId</excludeMdcKeyName>
+                    <excludeMdcKeyName>X-B3-TraceId</excludeMdcKeyName>
+                </mdc>
+                <arguments/>
+                <pattern>
+                    <pattern>
+                        { "host": "${DATA_CENTER_NAME}",
+                        "pod": "${HOSTNAME}",
+                        "appVersion":"${app_version}"}
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %contextName %logger{32} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+    <if condition='!isDefined("LOGSTASH_HOSTS")'>
+        <then>
+            <appender name="json-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOGS_DIR}/ff-agent-json.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+                    <maxIndex>1</maxIndex>
+                    <FileNamePattern>${LOGS_DIR}/ff-agent-json.log.%i</FileNamePattern>
+                </rollingPolicy>
+                <triggeringPolicy
+                        class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                    <MaxFileSize>50MB</MaxFileSize>
+                </triggeringPolicy>
+                <!-- JSON encoder -->
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <timestamp/>
+                        <message/>
+                        <loggerName/>
+                        <threadName/>
+                        <logLevel/>
+                        <contextName>
+                            <fieldName>applicationName</fieldName>
+                        </contextName>
+                        <stackTrace>
+                            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                                <maxLength>16384</maxLength>
+                                <shortenedClassNameLength>20</shortenedClassNameLength>
+                                <exclude>sun\.reflect\..*\.invoke.*</exclude>
+                            </throwableConverter>
+                        </stackTrace>
+                        <mdc>
+                            <excludeMdcKeyName>X-B3-SpanId</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-Span-Export</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-B3-ParentSpanId</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-B3-TraceId</excludeMdcKeyName>
+                        </mdc>
+                        <arguments/>
+                        <pattern>
+                            <pattern>
+                                { "host": "${DATA_CENTER_NAME}",
+                                "pod": "${HOSTNAME}",
+                                "appVersion":"${app_version}"}
+                            </pattern>
+                        </pattern>
+                    </providers>
+
+                </encoder>
+            </appender>
+        </then>
+    </if>
+    <if condition='isDefined("LOGSTASH_HOSTS")'>
+        <then>
+            <appender name="async" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+                <destination>${LOGSTASH_HOSTS}</destination>
+                <ringBufferSize>131072</ringBufferSize>
+                <keepAliveDuration>5 minutes</keepAliveDuration>
+                <reconnectionDelay>10 second</reconnectionDelay>
+                <!-- JSON encoder -->
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <timestamp/>
+                        <message/>
+                        <loggerName/>
+                        <threadName/>
+                        <logLevel/>
+                        <contextName>
+                            <fieldName>applicationName</fieldName>
+                        </contextName>
+                        <stackTrace>
+                            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                                <maxLength>16384</maxLength>
+                                <shortenedClassNameLength>20</shortenedClassNameLength>
+                                <exclude>sun\.reflect\..*\.invoke.*</exclude>
+                            </throwableConverter>
+                        </stackTrace>
+                        <mdc>
+                            <excludeMdcKeyName>X-B3-SpanId</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-Span-Export</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-B3-ParentSpanId</excludeMdcKeyName>
+                            <excludeMdcKeyName>X-B3-TraceId</excludeMdcKeyName>
+                        </mdc>
+                        <arguments/>
+                        <pattern>
+                            <pattern>
+                                { "host": "${DATA_CENTER_NAME}",
+                                "pod": "${HOSTNAME}",
+                                "appVersion":"${app_version}"}
+                            </pattern>
+                        </pattern>
+                    </providers>
+                </encoder>
+            </appender>
+        </then>
+    </if>
+
+    <root level="ERROR">
+        <if condition='isDefined("KAFKA_LOGS_ENABLED")'>
+            <then>
+                <appender-ref ref="kafka_stdout"/>
+            </then>
+        </if>
+        <if condition='isDefined("LOGSTASH_HOSTS")'>
+            <then>
+                <appender-ref ref="stdout"/>
+                <appender-ref ref="async"/>
+            </then>
+        </if>
+        <if condition='!isDefined("KAFKA_LOGS_ENABLED") &amp;&amp; !isDefined("LOGSTASH_HOSTS")'>
+            <then>
+                <appender-ref ref="stdout"/>
+                <appender-ref ref="json-appender"/>
+            </then>
+        </if>
+    </root>
+
+    <logger name="ru.trueengineering" level="INFO"/>
+    <logger name="liquibase" level="INFO"/>
+</configuration>

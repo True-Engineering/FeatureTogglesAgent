@@ -1,0 +1,6 @@
+host: ff.local
+image:
+  repository: true-feature-flag/
+
+imagePullSecrets:
+  name: dockercred
