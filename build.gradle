@@ -51,6 +51,13 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://maven.pkg.github.com/True-Engineering/True-logger")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+   }
 }
 
 ext {
@@ -82,7 +89,7 @@ dependencies {
 
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
-    implementation 'ru.trueengineering:true-logger:1.7'
+    implementation 'ru.trueengineering:true-logger:1.0.0'
 
     implementation 'org.projectlombok:lombok:1.18.22'
     implementation 'org.apache.commons:commons-lang3:3.9'
