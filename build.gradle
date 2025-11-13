@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '2.3.2.RELEASE'
+    id 'org.springframework.boot' version '2.7.18'
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
     id 'java'
     id "com.palantir.docker" version "0.25.0"
@@ -61,7 +61,7 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "Hoxton.SR3")
+    set('springCloudVersion', "2021.0.8")
     set('mapstructVersion', "1.3.1.Final")
 
     dockerHubUrl = ""
@@ -88,8 +88,6 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-influx'
 
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-
-    implementation 'ru.trueengineering:true-logger:1.0.0'
 
     implementation 'org.projectlombok:lombok:1.18.22'
     implementation 'org.apache.commons:commons-lang3:3.9'
@@ -123,7 +121,9 @@ test {
 bootJar {
     getDestinationDirectory().set(new File("build/ms"))
     archiveBaseName = jarName
-    layered()
+    layered {
+        enabled = true
+    }
 }
 
 docker {
